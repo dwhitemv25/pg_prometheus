@@ -1,6 +1,6 @@
 #include <inttypes.h>
 #include <sys/time.h>
-#include <postgres.h>f
+#include <postgres.h>
 #include <varatt.h>
 
 #include "utils.h"
