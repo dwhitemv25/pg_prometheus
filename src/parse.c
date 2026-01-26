@@ -48,7 +48,7 @@ parse_labels(char *input, PrometheusParseCtx *ctx)
 		size_t		namelen;
 		size_t		valuelen;
 
-		count = sscanf(input + i, "%c%1023[a-zA-Z0-9_]=%n",
+		count = sscanf(input + i, "%c%1022[a-zA-Z0-9_]=%n",
 					   &labelname[0], &labelname[1], &value_idx);
 
 		if (count != 2)
@@ -135,7 +135,7 @@ prom_from_cstring(char *input)
 	PrometheusSample *sample;
 	size_t		samplelen;
 
-	ret = sscanf(input, "%c%1023[a-zA-Z0-9_:]%n",
+	ret = sscanf(input, "%c%1022[a-zA-Z0-9_:]%n",
 				 &metric_name[0], &metric_name[1], &label_start_idx);
 
 	if (ret != 2)
