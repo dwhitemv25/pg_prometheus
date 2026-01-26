@@ -47,11 +47,6 @@ CREATE FUNCTION prom_label_count(prom_sample)
     AS '$libdir/pg_prometheus', 'prom_label_count'
     LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OPERATOR # (
-   leftarg = prom_sample,
-   procedure = prom_label_count
-);
-
 CREATE FUNCTION prom_label(prom_sample, text)
     RETURNS text
     AS '$libdir/pg_prometheus', 'prom_label'
@@ -73,40 +68,20 @@ CREATE FUNCTION prom_labels(prom_sample)
     AS '$libdir/pg_prometheus', 'prom_labels'
     LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OPERATOR @ (
-   leftarg = prom_sample,
-   procedure = prom_labels
-);
-
 CREATE FUNCTION prom_name(prom_sample)
     RETURNS text
     AS '$libdir/pg_prometheus', 'prom_name'
     LANGUAGE C IMMUTABLE STRICT;
-
-CREATE OPERATOR | (
-   leftarg = prom_sample,
-   procedure = prom_name
-);
 
 CREATE FUNCTION prom_time(prom_sample)
     RETURNS timestamptz
     AS '$libdir/pg_prometheus', 'prom_time'
     LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OPERATOR ! (
-   leftarg = prom_sample,
-   procedure = prom_time
-);
-
 CREATE FUNCTION prom_value(prom_sample)
     RETURNS float8
     AS '$libdir/pg_prometheus', 'prom_value'
     LANGUAGE C IMMUTABLE STRICT;
-
-CREATE OPERATOR -> (
-   leftarg = prom_sample,
-   procedure = prom_value
-);
 
 
 -- JSONB functions
