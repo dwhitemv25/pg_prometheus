@@ -1,0 +1,76 @@
+                                                                                  QUERY PLAN
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Insert on metrics_values  (cost=0.18..2.26 rows=0 width=0) (actual time=0.181..0.182 rows=0.00 loops=1)
+   Buffers: shared hit=25 read=1 dirtied=11 written=7
+   I/O Timings: shared read=0.006 write=0.050
+   CTE data
+     ->  Result  (cost=0.00..0.01 rows=1 width=80) (actual time=0.001..0.001 rows=1.00 loops=1)
+   CTE ins
+     ->  Insert on metrics_labels  (cost=0.00..0.03 rows=1 width=68) (actual time=0.114..0.115 rows=1.00 loops=1)
+           Conflict Resolution: NOTHING
+           Tuples Inserted: 1
+           Conflicting Tuples: 0
+           Buffers: shared hit=13 dirtied=8 written=5
+           I/O Timings: shared write=0.039
+           ->  CTE Scan on data d_1  (cost=0.00..0.03 rows=1 width=68) (actual time=0.005..0.005 rows=1.00 loops=1)
+                 Storage: Memory  Maximum Storage: 17kB
+                 Buffers: shared hit=1
+   ->  Nested Loop Left Join  (cost=0.15..2.23 rows=1 width=20) (actual time=0.125..0.127 rows=1.00 loops=1)
+         Join Filter: ((d.p_name = ins.metric_name) AND (d.p_labels = ins.labels))
+         Buffers: shared hit=15 dirtied=8 written=5
+         I/O Timings: shared write=0.039
+         ->  Nested Loop Left Join  (cost=0.15..2.19 rows=1 width=84) (actual time=0.006..0.007 rows=1.00 loops=1)
+               Buffers: shared hit=2
+               ->  CTE Scan on data d  (cost=0.00..0.02 rows=1 width=80) (actual time=0.003..0.003 rows=1.00 loops=1)
+                     Storage: Memory  Maximum Storage: 17kB
+               ->  Index Scan using metrics_labels_metric_name_labels_key on metrics_labels lt  (cost=0.15..2.17 rows=1 width=68) (actual time=0.002..0.002 rows=0.00 loops=1)
+                     Index Cond: ((metric_name = d.p_name) AND (labels = d.p_labels))
+                     Index Searches: 1
+                     Buffers: shared hit=2
+         ->  CTE Scan on ins  (cost=0.00..0.02 rows=1 width=68) (actual time=0.115..0.116 rows=1.00 loops=1)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=13 dirtied=8 written=5
+               I/O Timings: shared write=0.039
+ Planning:
+   Buffers: shared hit=35 read=3
+   I/O Timings: shared read=0.026
+ Planning Time: 0.264 ms
+ Trigger for constraint metrics_values_labels_id_fkey on metrics_values: time=0.088 calls=1
+ Execution Time: 0.295 ms
+(37 rows)
+==============================
+                                                                                  QUERY PLAN
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ Insert on metrics_values  (cost=0.18..2.26 rows=0 width=0) (actual time=0.048..0.049 rows=0.00 loops=1)
+   Buffers: shared hit=9
+   CTE data
+     ->  Result  (cost=0.00..0.01 rows=1 width=80) (actual time=0.001..0.002 rows=1.00 loops=1)
+   CTE ins
+     ->  Insert on metrics_labels  (cost=0.00..0.03 rows=1 width=68) (actual time=0.016..0.016 rows=0.00 loops=1)
+           Conflict Resolution: NOTHING
+           Tuples Inserted: 0
+           Conflicting Tuples: 1
+           Buffers: shared hit=4
+           ->  CTE Scan on data d_1  (cost=0.00..0.03 rows=1 width=68) (actual time=0.005..0.005 rows=1.00 loops=1)
+                 Storage: Memory  Maximum Storage: 17kB
+                 Buffers: shared hit=1
+   ->  Nested Loop Left Join  (cost=0.15..2.23 rows=1 width=20) (actual time=0.035..0.036 rows=1.00 loops=1)
+         Join Filter: ((d.p_name = ins.metric_name) AND (d.p_labels = ins.labels))
+         Buffers: shared hit=6
+         ->  Nested Loop Left Join  (cost=0.15..2.19 rows=1 width=84) (actual time=0.018..0.018 rows=1.00 loops=1)
+               Buffers: shared hit=2
+               ->  CTE Scan on data d  (cost=0.00..0.02 rows=1 width=80) (actual time=0.003..0.003 rows=1.00 loops=1)
+                     Storage: Memory  Maximum Storage: 17kB
+               ->  Index Scan using metrics_labels_metric_name_labels_key on metrics_labels lt  (cost=0.15..2.17 rows=1 width=68) (actual time=0.013..0.013 rows=1.00 loops=1)
+                     Index Cond: ((metric_name = d.p_name) AND (labels = d.p_labels))
+                     Index Searches: 1
+                     Buffers: shared hit=2
+         ->  CTE Scan on ins  (cost=0.00..0.02 rows=1 width=68) (actual time=0.016..0.016 rows=0.00 loops=1)
+               Storage: Memory  Maximum Storage: 17kB
+               Buffers: shared hit=4
+ Planning Time: 0.167 ms
+ Trigger for constraint metrics_values_labels_id_fkey on metrics_values: time=0.056 calls=1
+ Execution Time: 0.132 ms
+(30 rows)
+
+
