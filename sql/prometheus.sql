@@ -106,23 +106,20 @@ BEGIN
     values_table := TG_ARGV[0];
     labels_table := TG_ARGV[1];
 
-    -- Insert labels
-    EXECUTE format('SELECT id FROM %I l WHERE %L = l.labels AND %L = l.metric_name',
-          labels_table, metric_labels, prom_name(NEW.sample)) INTO metric_labels_id;
-
-    IF metric_labels_id IS NULL THEN
-      EXECUTE format(
-          $$
-          INSERT INTO %I (metric_name, labels) VALUES (%L, %L) RETURNING id
-          $$,
-          labels_table,
-          prom_name(NEW.sample),
-          metric_labels
-      ) INTO STRICT metric_labels_id;
-    END IF;
-
-    EXECUTE format('INSERT INTO %I (time, value, labels_id) VALUES (%L, %L, %L)',
-          values_table, prom_time(NEW.sample), prom_value(NEW.sample), metric_labels_id);
+    EXECUTE format($$
+        WITH data AS ( SELECT * FROM (VALUES (%L::text, %L::jsonb, %L::timestamptz, %L::double precision)) v(p_name, p_labels, p_time, p_value)),
+        ins AS (INSERT INTO %I (metric_name, labels) SELECT p_name, p_labels FROM data d ON CONFLICT DO NOTHING)
+        INSERT INTO %I (time, value, labels_id)
+        SELECT d.p_time, d.p_value, lt.id FROM %I lt JOIN data d ON d.p_name=lt.metric_name AND d.p_labels=lt.labels
+        $$,
+        prom_name(NEW.sample),
+        metric_labels,
+        prom_time(NEW.sample),
+        prom_value(NEW.sample),
+        labels_table,
+        values_table,
+        labels_table
+        );
 
     RETURN NULL;
 END
