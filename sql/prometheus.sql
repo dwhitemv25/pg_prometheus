@@ -4,12 +4,12 @@ CREATE TYPE prom_sample;
 
 CREATE FUNCTION prom_in(cstring)
     RETURNS prom_sample
-    AS '$libdir/pg_prometheus', 'prom_in'
+    AS 'MODULE_PATHNAME', 'prom_in'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_out(prom_sample)
     RETURNS cstring
-    AS '$libdir/pg_prometheus', 'prom_out'
+    AS 'MODULE_PATHNAME', 'prom_out'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE TYPE prom_sample (
@@ -23,17 +23,17 @@ CREATE TYPE prom_sample (
 
 CREATE FUNCTION to_prom(cstring)
     RETURNS prom_sample
-    AS '$libdir/pg_prometheus', 'prom_in'
+    AS 'MODULE_PATHNAME', 'prom_in'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_construct(TIMESTAMPTZ, TEXT, double precision, jsonb)
     RETURNS prom_sample
-    AS '$libdir/pg_prometheus', 'prom_construct'
+    AS 'MODULE_PATHNAME', 'prom_construct'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_has_label(prom_sample, text)
     RETURNS bool
-    AS '$libdir/pg_prometheus', 'prom_has_label'
+    AS 'MODULE_PATHNAME', 'prom_has_label'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE OPERATOR ? (
@@ -44,12 +44,12 @@ CREATE OPERATOR ? (
 
 CREATE FUNCTION prom_label_count(prom_sample)
     RETURNS integer
-    AS '$libdir/pg_prometheus', 'prom_label_count'
+    AS 'MODULE_PATHNAME', 'prom_label_count'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_label(prom_sample, text)
     RETURNS text
-    AS '$libdir/pg_prometheus', 'prom_label'
+    AS 'MODULE_PATHNAME', 'prom_label'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE OPERATOR @ (
@@ -60,34 +60,34 @@ CREATE OPERATOR @ (
 
 CREATE FUNCTION prom_labels(prom_sample, include_name bool)
     RETURNS jsonb
-    AS '$libdir/pg_prometheus', 'prom_labels'
+    AS 'MODULE_PATHNAME', 'prom_labels'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_labels(prom_sample)
     RETURNS jsonb
-    AS '$libdir/pg_prometheus', 'prom_labels'
+    AS 'MODULE_PATHNAME', 'prom_labels'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_name(prom_sample)
     RETURNS text
-    AS '$libdir/pg_prometheus', 'prom_name'
+    AS 'MODULE_PATHNAME', 'prom_name'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_time(prom_sample)
     RETURNS timestamptz
-    AS '$libdir/pg_prometheus', 'prom_time'
+    AS 'MODULE_PATHNAME', 'prom_time'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE FUNCTION prom_value(prom_sample)
     RETURNS float8
-    AS '$libdir/pg_prometheus', 'prom_value'
+    AS 'MODULE_PATHNAME', 'prom_value'
     LANGUAGE C IMMUTABLE STRICT;
 
 
 -- JSONB functions
 CREATE FUNCTION prom_jsonb(prom_sample)
     RETURNS jsonb
-    AS '$libdir/pg_prometheus', 'prom_jsonb'
+    AS 'MODULE_PATHNAME', 'prom_jsonb'
     LANGUAGE C IMMUTABLE STRICT;
 
 CREATE OR REPLACE FUNCTION prometheus.insert_view_normal()
