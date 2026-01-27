@@ -108,9 +108,11 @@ BEGIN
 
     EXECUTE format($$
         WITH data AS ( SELECT * FROM (VALUES (%L::text, %L::jsonb, %L::timestamptz, %L::double precision)) v(p_name, p_labels, p_time, p_value)),
-        ins AS (INSERT INTO %I (metric_name, labels) SELECT p_name, p_labels FROM data d ON CONFLICT DO NOTHING)
+        ins AS (INSERT INTO %I (metric_name, labels) SELECT p_name, p_labels FROM data d ON CONFLICT DO NOTHING RETURNING *)
         INSERT INTO %I (time, value, labels_id)
-        SELECT d.p_time, d.p_value, lt.id FROM %I lt JOIN data d ON d.p_name=lt.metric_name AND d.p_labels=lt.labels
+        SELECT d.p_time, d.p_value, coalesce(ins.id, lt.id) FROM data d
+        LEFT JOIN %I lt ON d.p_name=lt.metric_name AND d.p_labels=lt.labels
+        LEFT JOIN ins ON d.p_name=ins.metric_name AND d.p_labels=ins.labels
         $$,
         prom_name(NEW.sample),
         metric_labels,
@@ -120,6 +122,7 @@ BEGIN
         values_table,
         labels_table
         );
+
 
     RETURN NULL;
 END
