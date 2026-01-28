@@ -93,9 +93,12 @@ CREATE OR REPLACE FUNCTION insert_view_normal()
 $BODY$
 DECLARE
     metric_labels     JSONB = prom_labels(NEW.sample, false);
-    metric_labels_id  INTEGER;
     labels_table      NAME;
     values_table      NAME;
+    append_labels     JSONB = current_setting('pg_prometheus.append_labels');
+    remove_labels     TEXT[] = current_setting('pg_prometheus.remove_labels');
+    instance_label    TEXT = current_setting('pg_prometheus.instance_label');
+    job_label         TEXT = current_setting('pg_prometheus.job_label');
 BEGIN
     IF TG_NARGS != 2 THEN
         RAISE EXCEPTION 'insert_view_normal requires 2 parameters';
@@ -103,26 +106,29 @@ BEGIN
 
     values_table := TG_ARGV[0];
     labels_table := TG_ARGV[1];
+    
+    IF append_labels <> '{}'::jsonb THEN
+        metric_labels := metric_labels || append_labels;
+    END IF;
+    IF array_length(remove_labels, 1) > 0 THEN
+        metric_labels := metric_labels - remove_labels;
+    END IF;
+    IF instance_label <> '' THEN
+        metric_labels := metric_labels || jsonb_build_object('instance', instance_label);
+    END IF;
+    IF job_label <> '' THEN
+        metric_labels := metric_labels || jsonb_build_object('job', job_label);
+    END IF;
 
     EXECUTE format($$
         WITH
-        conf AS (SELECT
-            current_setting('pg_prometheus.append_labels')::jsonb as append_labels,
-            current_setting('pg_prometheus.remove_labels')::text[] as remove_labels,
-            current_setting('pg_prometheus.instance_label') as instance_label,
-            current_setting('pg_prometheus.job_label') as job_label
-        ),
         data AS (SELECT
             p_name,
-            (p_labels ||
-                conf.append_labels ||
-                CASE WHEN conf.instance_label <> '' THEN jsonb_build_object('instance', conf.instance_label) ELSE '{}'::jsonb END ||
-                CASE WHEN conf.job_label <> '' THEN jsonb_build_object('job', conf.job_label) ELSE '{}'::jsonb END) - conf.remove_labels AS p_labels,
+            p_labels,
             p_time,
             p_value
             FROM
-                (VALUES (%L::text, %L::jsonb, %L::timestamptz, %L::double precision)) v(p_name, p_labels, p_time, p_value),
-                conf
+                (VALUES (%L::text, %L::jsonb, %L::timestamptz, %L::double precision)) v(p_name, p_labels, p_time, p_value)
         ),
         ins AS (INSERT INTO %I (metric_name, labels) SELECT p_name, p_labels FROM data d ON CONFLICT DO NOTHING RETURNING *)
         INSERT INTO %I (time, value, labels_id)
