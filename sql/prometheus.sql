@@ -229,7 +229,7 @@ BEGIN
         EXECUTE format(
             $$
             CREATE TABLE %I (
-                  id SERIAL PRIMARY KEY,
+                  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                   metric_name TEXT NOT NULL,
                   labels jsonb,
                   UNIQUE(metric_name, labels)
@@ -250,14 +250,14 @@ BEGIN
           --does not support foreign  references
           EXECUTE format(
               $$
-              CREATE TABLE %I (time TIMESTAMPTZ, value FLOAT8, labels_id INTEGER)
+              CREATE TABLE %I (time TIMESTAMPTZ, value FLOAT8, labels_id BIGINT)
               $$,
               metrics_values_table_name
           );
         ELSE
           EXECUTE format(
               $$
-              CREATE TABLE %I (time TIMESTAMPTZ, value FLOAT8, labels_id INTEGER REFERENCES %I(id))
+              CREATE TABLE %I (time TIMESTAMPTZ, value FLOAT8, labels_id BIGINT REFERENCES %I(id))
               $$,
               metrics_values_table_name,
               metrics_labels_table_name
