@@ -449,16 +449,16 @@ _PG_init(void)
         "Appends labels to rows INSERTed through trigger, value must be valid JSON object",
         NULL,
         &append_labels,
-        "",
+        "{}",
         PGC_USERSET,
         0,
         NULL, NULL, NULL);
     DefineCustomStringVariable(
         "pg_prometheus.remove_labels",
-        "Removes labels from rows INSERTed through trigger, value must be valid JSON object",
+        "Removes labels from rows INSERTed through trigger, value must be valid array constructor",
         NULL,
         &remove_labels,
-        "",
+        "{}",
         PGC_USERSET,
         0,
         NULL, NULL, NULL);
