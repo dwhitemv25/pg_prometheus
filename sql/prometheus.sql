@@ -107,17 +107,17 @@ BEGIN
     values_table := TG_ARGV[0];
     labels_table := TG_ARGV[1];
     
-    IF append_labels <> '{}'::jsonb THEN
-        metric_labels := metric_labels || append_labels;
+    IF instance_label <> '' THEN
+        to_append := to_append || jsonb_build_object('instance', instance_label);
+    END IF;
+    IF job_label <> '' THEN
+        to_append := to_append || jsonb_build_object('job', job_label);
+    END IF;
+    IF to_append <> '{}'::jsonb THEN
+        metric_labels := metric_labels || to_append;
     END IF;
     IF array_length(remove_labels, 1) > 0 THEN
         metric_labels := metric_labels - remove_labels;
-    END IF;
-    IF instance_label <> '' THEN
-        metric_labels := metric_labels || jsonb_build_object('instance', instance_label);
-    END IF;
-    IF job_label <> '' THEN
-        metric_labels := metric_labels || jsonb_build_object('job', job_label);
     END IF;
 
     EXECUTE format($$
