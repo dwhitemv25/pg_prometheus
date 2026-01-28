@@ -1,5 +1,3 @@
-CREATE SCHEMA prometheus;
-
 CREATE TYPE prom_sample;
 
 CREATE FUNCTION prom_in(cstring)
@@ -90,7 +88,7 @@ CREATE FUNCTION prom_jsonb(prom_sample)
     AS 'MODULE_PATHNAME', 'prom_jsonb'
     LANGUAGE C IMMUTABLE STRICT;
 
-CREATE OR REPLACE FUNCTION prometheus.insert_view_normal()
+CREATE OR REPLACE FUNCTION insert_view_normal()
     RETURNS TRIGGER LANGUAGE PLPGSQL AS
 $BODY$
 DECLARE
@@ -128,7 +126,7 @@ BEGIN
 END
 $BODY$;
 
-CREATE OR REPLACE FUNCTION prometheus.insert_view_sample()
+CREATE OR REPLACE FUNCTION insert_view_sample()
     RETURNS TRIGGER LANGUAGE PLPGSQL AS
 $BODY$
 DECLARE
@@ -272,7 +270,7 @@ BEGIN
         EXECUTE format(
             $$
             CREATE TRIGGER insert_trigger INSTEAD OF INSERT ON %I
-            FOR EACH ROW EXECUTE PROCEDURE prometheus.insert_view_normal(%L, %L)
+            FOR EACH ROW EXECUTE PROCEDURE insert_view_normal(%L, %L)
             $$,
             metrics_view_name,
             metrics_values_table_name,
@@ -282,7 +280,7 @@ BEGIN
         EXECUTE format(
             $$
             CREATE TRIGGER insert_trigger BEFORE INSERT ON %I
-            FOR EACH ROW EXECUTE PROCEDURE prometheus.insert_view_normal(%L, %L)
+            FOR EACH ROW EXECUTE PROCEDURE insert_view_normal(%L, %L)
             $$,
             metrics_copy_table_name,
             metrics_values_table_name,
@@ -328,7 +326,7 @@ BEGIN
         EXECUTE format(
             $$
             CREATE TRIGGER insert_trigger INSTEAD OF INSERT ON %I
-            FOR EACH ROW EXECUTE PROCEDURE prometheus.insert_view_sample(%L)
+            FOR EACH ROW EXECUTE PROCEDURE insert_view_sample(%L)
             $$,
             metrics_view_name,
             metrics_samples_table_name

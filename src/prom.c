@@ -1,5 +1,6 @@
 #include <postgres.h>
 #include <utils/builtins.h>
+#include <utils/guc.h>
 #include <utils/timestamp.h>
 #include <utils/jsonb.h>
 #include <utils/json.h>
@@ -8,9 +9,15 @@
 #include "parse.h"
 #include "utils.h"
 
-#ifdef PG_MODULE_MAGIC
-PG_MODULE_MAGIC;
-#endif
+PG_MODULE_MAGIC_EXT(
+                    .name = "pg_prometheus",
+                    .version = "0.2.2"
+                    );
+
+static char *append_labels = NULL;
+static char *remove_labels = NULL;
+static char *instance_label = NULL;
+static char *job_label = NULL;
 
 static char * 
 prom_label_strip_escape(const char *orig) 
@@ -432,4 +439,46 @@ prom_construct(PG_FUNCTION_ARGS)
 	parse_jsonb_labels(jb, &ctx);
 
 	PG_RETURN_POINTER(sample);
+}
+
+void
+_PG_init(void)
+{
+    DefineCustomStringVariable(
+        "pg_prometheus.append_labels",
+        "Appends labels to rows INSERTed through trigger, value must be valid JSON object",
+        NULL,
+        &append_labels,
+        "",
+        PGC_USERSET,
+        0,
+        NULL, NULL, NULL);
+    DefineCustomStringVariable(
+        "pg_prometheus.remove_labels",
+        "Removes labels from rows INSERTed through trigger, value must be valid JSON object",
+        NULL,
+        &remove_labels,
+        "",
+        PGC_USERSET,
+        0,
+        NULL, NULL, NULL);
+    DefineCustomStringVariable(
+        "pg_prometheus.instance_label",
+        "Adds instance label with this value to rows INSERTed through trigger",
+        NULL,
+        &instance_label,
+        "",
+        PGC_USERSET,
+        0,
+        NULL, NULL, NULL);
+    DefineCustomStringVariable(
+        "pg_prometheus.job_label",
+        "Adds job label with this value to rows INSERTed through trigger",
+        NULL,
+        &job_label,
+        "",
+        PGC_USERSET,
+        0,
+        NULL, NULL, NULL);
+    
 }
