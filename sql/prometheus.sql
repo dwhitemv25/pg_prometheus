@@ -95,6 +95,7 @@ DECLARE
     metric_labels     JSONB = prom_labels(NEW.sample, false);
     labels_table      NAME;
     values_table      NAME;
+    to_append         JSONB;
     append_labels     JSONB = current_setting('pg_prometheus.append_labels');
     remove_labels     TEXT[] = current_setting('pg_prometheus.remove_labels');
     instance_label    TEXT = current_setting('pg_prometheus.instance_label');
