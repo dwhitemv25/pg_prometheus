@@ -2,6 +2,7 @@
 #include <sys/time.h>
 #include <postgres.h>
 #include <varatt.h>
+#include <access/xact.h>
 
 #include "utils.h"
 #include "prom.h"
@@ -189,21 +190,20 @@ prom_from_cstring(char *input)
 
 	ret = sscanf(input, " %lf %" PRId64 "", &value, &time_ms);
 
-	if (ret < 1)
+	if (ret < 1) /* Got neither */
 	{
 		fail("Unexpected number of input items assigned\n");
 	}
-
-	if (ret == 1)
+	else if (ret == 1) /* Value only, no timestamp; substitute current_timestamp */
 	{
-		struct timeval now;
-
-		gettimeofday(&now, NULL);
-		time_ms = now.tv_sec * 1000 + now.tv_usec / 1000;
-	}
+        sample->time = GetCurrentTransactionStartTimestamp();
+    }
+    else /* (ret == 2) Got both, log the received timestamp */
+    {
+        sample->time = prom_unix_microseconds_to_timestamp(time_ms * 1000);
+    }
 
 	sample->value = value;
-	sample->time = prom_unix_microseconds_to_timestamp(time_ms * 1000);
-
+	
 	return sample;
 }
