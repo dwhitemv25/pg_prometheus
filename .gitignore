@@ -8,3 +8,4 @@
 /src/*.o
 /pg_prometheus.tar.gz
 /timescaledb.tar.gz
+.DS_Store
