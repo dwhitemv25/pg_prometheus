@@ -172,7 +172,7 @@ CREATE FUNCTION create_prometheus_cx_table(
        metrics_samples_table_name NAME = NULL,
        metrics_copy_table_name NAME = NULL
 )
-    RETURNS VOID LANGUAGE PLPGSQL VOLATILE AS
+    RETURNS BOOLEAN LANGUAGE PLPGSQL VOLATILE AS
 $BODY$
 BEGIN
     IF metrics_view_name IS NULL THEN
@@ -272,5 +272,6 @@ BEGIN
         metrics_labels_table_name
     );
 
+    RETURN TRUE;
 END
 $BODY$;
