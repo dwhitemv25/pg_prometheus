@@ -1,5 +1,5 @@
 EXTENSION = pg_prometheus_cx
-DATA = sql/pg_prometheus_cx--1.0.sql
+DATA = pg_prometheus_cx--1.0.sql
 
 PG_CONFIG = pg_config
 PGXS := $(shell $(PG_CONFIG) --pgxs)
