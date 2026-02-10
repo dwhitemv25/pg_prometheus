@@ -107,10 +107,10 @@ DECLARE
     values_table      name;
     to_append         text[];
     labels_array      text[];
-    append_labels     text[] = current_setting('pg_prometheus_cx.append_labels');
-    remove_labels     text[] = current_setting('pg_prometheus_cx.remove_labels');
-    instance_label    text = current_setting('pg_prometheus_cx.instance_label');
-    job_label         text = current_setting('pg_prometheus_cx.job_label');
+    append_labels     text[] = current_setting('pg_prometheus_cx.append_labels', true);
+    remove_labels     text[] = current_setting('pg_prometheus_cx.remove_labels', true);
+    instance_label    text = current_setting('pg_prometheus_cx.instance_label', true);
+    job_label         text = current_setting('pg_prometheus_cx.job_label', true);
 BEGIN
     IF TG_NARGS != 2 THEN
         RAISE EXCEPTION 'insert_view_normal requires 2 parameters';
