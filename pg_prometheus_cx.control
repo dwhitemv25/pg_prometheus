@@ -1,0 +1,5 @@
+comment = 'Prometheus metrics for PostgreSQL-Pure SQL'
+directory = sql
+default_version = '1.0'
+superuser = false
+relocatable = false
