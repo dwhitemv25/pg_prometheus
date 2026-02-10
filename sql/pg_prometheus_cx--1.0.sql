@@ -150,7 +150,7 @@ BEGIN
                 (VALUES ($1)) v(p)
         ),
         ins AS (INSERT INTO %I (metric_name, labels) SELECT p_name, p_labels FROM data d ON CONFLICT DO NOTHING RETURNING *)
-        INSERT INTO %I (time, value, labels_id)
+        INSERT INTO %I (ts, value, labels_id)
         SELECT d.p_time, d.p_value, coalesce(ins.id, lt.id) FROM data d
         LEFT JOIN %I lt ON d.p_name=lt.metric_name AND d.p_labels=lt.labels
         LEFT JOIN ins ON d.p_name=ins.metric_name AND d.p_labels=ins.labels
@@ -162,5 +162,115 @@ BEGIN
 
 
     RETURN NULL;
+END
+$BODY$;
+
+CREATE FUNCTION create_prometheus_cx_table(
+       metrics_view_name NAME,
+       metrics_values_table_name NAME = NULL,
+       metrics_labels_table_name NAME = NULL,
+       metrics_samples_table_name NAME = NULL,
+       metrics_copy_table_name NAME = NULL
+)
+    RETURNS VOID LANGUAGE PLPGSQL VOLATILE AS
+$BODY$
+BEGIN
+    IF metrics_view_name IS NULL THEN
+       RAISE EXCEPTION 'Must specify base name for tables';
+    END IF;
+
+    IF metrics_values_table_name IS NULL THEN
+       metrics_values_table_name := format('%I_values', metrics_view_name);
+    END IF;
+
+    IF metrics_labels_table_name IS NULL THEN
+       metrics_labels_table_name := format('%I_labels', metrics_view_name);
+    END IF;
+
+    IF metrics_samples_table_name IS NULL THEN
+       metrics_samples_table_name := format('%I_samples', metrics_view_name);
+    END IF;
+
+    IF metrics_copy_table_name IS NULL THEN
+       metrics_copy_table_name := format('%I_copy', metrics_view_name);
+    END IF;
+
+    -- Create labels table
+    EXECUTE format(
+        $$
+        CREATE TABLE %I (
+                  id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+                  metric_name text NOT NULL,
+                  labels jsonb,
+                  UNIQUE(metric_name, labels)
+        )
+        $$,
+        metrics_labels_table_name
+    );
+
+    -- Create copy table
+    EXECUTE format(
+      $$
+      CREATE TABLE %I (sample text NOT NULL)
+      $$,
+      metrics_copy_table_name
+    );
+
+    -- Create value table
+    EXECUTE format(
+        $$
+        CREATE TABLE %I (
+            ts timestamptz,
+            value double precision,
+            labels_id bigint REFERENCES %I(id)
+        )
+        $$,
+        metrics_values_table_name,
+        metrics_labels_table_name
+    );
+
+    -- Create labels ID column index
+    EXECUTE format(
+        $$
+        CREATE INDEX %I_labels_id_idx ON %1$I USING BTREE (labels_id, ts desc)
+        $$,
+        metrics_values_table_name
+    );
+
+    -- Create a view for the metrics
+    EXECUTE format(
+        $$
+        CREATE VIEW %I AS
+        SELECT prom_construct(m.ts, l.metric_name, m.value, l.labels) AS sample,
+               m.ts AS ts, l.metric_name AS metric, m.value AS value, l.labels AS labels
+        FROM %I AS m
+        INNER JOIN %I l ON (m.labels_id = l.id)
+        $$,
+        metrics_view_name,
+        metrics_values_table_name,
+        metrics_labels_table_name
+    );
+
+    -- Attach triggers for insert
+    EXECUTE format(
+        $$
+        CREATE TRIGGER insert_trigger INSTEAD OF INSERT ON %I
+        FOR EACH ROW EXECUTE PROCEDURE insert_view_normalized_cx(%L, %L)
+        $$,
+        metrics_view_name,
+        metrics_values_table_name,
+        metrics_labels_table_name
+    );
+
+    EXECUTE format(
+        $$
+        CREATE TRIGGER insert_trigger BEFORE INSERT ON %I
+        FOR EACH ROW EXECUTE PROCEDURE insert_view_normalized_cx(%L, %L)
+        $$,
+        metrics_copy_table_name,
+        metrics_values_table_name,
+        metrics_labels_table_name
+    );
+
 END
 $BODY$;
