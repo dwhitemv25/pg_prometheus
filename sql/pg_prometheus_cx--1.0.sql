@@ -144,7 +144,7 @@ BEGIN
         data AS (SELECT
             (p).metric AS p_name,
             COALESCE((p).labels::jsonb,'{}'::jsonb) AS p_labels,
-            (p).ts AS p_time,
+            COALESCE((p).ts,CURRENT_TIMESTAMP) AS p_time,
             (p).value AS p_value
             FROM
                 (VALUES ($1)) v(p)
@@ -201,7 +201,7 @@ BEGIN
         CREATE TABLE %I (
                   id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                   metric_name text NOT NULL,
-                  labels jsonb,
+                  labels jsonb NOT NULL,
                   UNIQUE(metric_name, labels)
         )
         $$,
@@ -220,9 +220,9 @@ BEGIN
     EXECUTE format(
         $$
         CREATE TABLE %I (
-            ts timestamptz,
-            value double precision,
-            labels_id bigint REFERENCES %I(id)
+            ts timestamptz NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            value double precision NOT NULL,
+            labels_id bigint NOT NULL REFERENCES %I(id)
         )
         $$,
         metrics_values_table_name,
