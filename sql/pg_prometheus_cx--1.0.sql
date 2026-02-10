@@ -5,6 +5,22 @@ CREATE TYPE prom_sample_cx AS (
         labels json
 );
 
+CREATE FUNCTION prom_escape(text)
+    RETURNS text
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    RETURN replace(replace(replace($1,'\','\\'),'"','\"'),E'\n','\n');
+    
+COMMENT ON FUNCTION prom_escape(text) IS 'Escape Prometheus literals according to exposition format rules';
+
+CREATE FUNCTION prom_unescape(text)
+    RETURNS text
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    RETURN replace(replace(replace($1,'\n',E'\n'),'\"','"'),'\\','\');
+
+COMMENT ON FUNCTION prom_unescape(text) is 'Unescape Prometheus literals according to exposition format rules';
+
 CREATE FUNCTION prom_labels_to_expo(json)
     RETURNS text
     STRICT PARALLEL SAFE IMMUTABLE
@@ -40,22 +56,6 @@ CREATE FUNCTION prom_construct_cx(timestamptz, text, double precision, json)
     RETURN ROW($2, $3, $1, $4);
     
 COMMENT ON FUNCTION prom_construct_cx(timestamptz, text, double precision, json) IS 'Create prom_sample_cx type from individual arguments';
-    
-CREATE FUNCTION prom_escape(text)
-    RETURNS text
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    RETURN replace(replace(replace($1,'\','\\'),'"','\"'),E'\n','\n');
-    
-COMMENT ON FUNCTION prom_escape(text) IS 'Escape Prometheus literals according to exposition format rules';
-
-CREATE FUNCTION prom_unescape(text)
-    RETURNS text
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    RETURN replace(replace(replace($1,'\n',E'\n'),'\"','"'),'\\','\');
-
-COMMENT ON FUNCTION prom_unescape(text) is 'Unescape Prometheus literals according to exposition format rules';
 
 CREATE FUNCTION prom_to_expo_classic(prom_sample_cx)
     RETURNS text
