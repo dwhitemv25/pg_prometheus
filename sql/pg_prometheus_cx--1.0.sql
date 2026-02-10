@@ -5,46 +5,6 @@ CREATE TYPE prom_sample_cx AS (
         labels json
 );
 
-CREATE FUNCTION prom_to_expo(prom_sample_cx)
-    RETURNS text
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    RETURN format('%s{%s} %s %s', $1.metric, prom_labels_to_expo($1.labels), $1.value, floor(extract(epoch from $1.ts)*1000));
-
-COMMENT ON FUNCTION prom_to_expo(prom_sample_cx) IS 'Convert prom_sample_cx type to exposition format with Prometheus identifier-compatible metric name';
-
-CREATE FUNCTION prom_to_expo_utf8(prom_sample_cx)
-    RETURNS text
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    RETURN format('{%s} %s %s', concat_ws(',', format('"%s"', prom_escape($1.metric)), prom_labels_to_expo($1.labels)), $1.value, floor(extract(epoch from $1.ts)*1000));
-    
-COMMENT ON FUNCTION prom_to_expo_utf8(prom_sample_cx) IS 'Convert prom_sample_cx type to exposition format with quoted/escaped metric name';
-
-CREATE FUNCTION prom_from_expo_classic(text)
-    RETURNS prom_sample_cx
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    BEGIN ATOMIC
-    SELECT prom_construct_cx(to_timestamp(a[4]::double precision/1000.0::double precision), a[1]::text, a[3]::double precision, prom_expo_to_labels(a[2])) FROM
-        regexp_match($1, '^([a-zA-Z_:][a-zA-Z0-9_:]*]*)?(\{.*\})?[\t ]*([-0-9E.]*)[\t ]*([0-9]+)?$'::text)
-        r(a);
-    END;
-    
-COMMENT ON FUNCTION prom_from_expo_classic(text) is 'Convert exposition format with Prometheus identifier-compatible metric name to prom_sample_cx type';
-
-CREATE FUNCTION prom_from_expo_utf8(text)
-    RETURNS prom_sample_cx
-    STRICT PARALLEL SAFE IMMUTABLE
-    LANGUAGE SQL
-    BEGIN ATOMIC
-    SELECT prom_construct_cx(to_timestamp(a[4]::double precision/1000.0::double precision), a[1]::text, a[3]::double precision, prom_expo_to_labels(a[2])) FROM
-        regexp_match($1,'^\{\"([^,]+)\",?(.+)?\}[\t ]*([-0-9E.]*)[\t ]*([0-9]+)?$')
-        r(a);
-    END;
-    
-COMMENT ON FUNCTION prom_from_expo_classic(text) is 'Convert exposition format with quoted/escaped metric name to prom_sample_cx type';
-
 CREATE FUNCTION prom_labels_to_expo(json)
     RETURNS text
     STRICT PARALLEL SAFE IMMUTABLE
@@ -96,6 +56,47 @@ CREATE FUNCTION prom_unescape(text)
     RETURN replace(replace(replace($1,'\n',E'\n'),'\"','"'),'\\','\');
 
 COMMENT ON FUNCTION prom_unescape(text) is 'Unescape Prometheus literals according to exposition format rules';
+
+CREATE FUNCTION prom_to_expo_classic(prom_sample_cx)
+    RETURNS text
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    RETURN format('%s{%s} %s %s', $1.metric, prom_labels_to_expo($1.labels), $1.value, floor(extract(epoch from $1.ts)*1000));
+
+COMMENT ON FUNCTION prom_to_expo_classic(prom_sample_cx) IS 'Convert prom_sample_cx type to exposition format with Prometheus identifier-compatible metric name';
+
+CREATE FUNCTION prom_to_expo_utf8(prom_sample_cx)
+    RETURNS text
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    RETURN format('{%s} %s %s', concat_ws(',', format('"%s"', prom_escape($1.metric)), prom_labels_to_expo($1.labels)), $1.value, floor(extract(epoch from $1.ts)*1000));
+    
+COMMENT ON FUNCTION prom_to_expo_utf8(prom_sample_cx) IS 'Convert prom_sample_cx type to exposition format with quoted/escaped metric name';
+
+CREATE FUNCTION prom_from_expo_classic(text)
+    RETURNS prom_sample_cx
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    BEGIN ATOMIC
+    SELECT prom_construct_cx(to_timestamp(a[4]::double precision/1000.0::double precision), a[1]::text, a[3]::double precision, prom_expo_to_labels(a[2])) FROM
+        regexp_match($1, '^([a-zA-Z_:][a-zA-Z0-9_:]*]*)?(\{.*\})?[\t ]*([-0-9E.]*)[\t ]*([0-9]+)?$'::text)
+        r(a);
+    END;
+    
+COMMENT ON FUNCTION prom_from_expo_classic(text) is 'Convert exposition format with Prometheus identifier-compatible metric name to prom_sample_cx type';
+
+CREATE FUNCTION prom_from_expo_utf8(text)
+    RETURNS prom_sample_cx
+    STRICT PARALLEL SAFE IMMUTABLE
+    LANGUAGE SQL
+    BEGIN ATOMIC
+    SELECT prom_construct_cx(to_timestamp(a[4]::double precision/1000.0::double precision), a[1]::text, a[3]::double precision, prom_expo_to_labels(a[2])) FROM
+        regexp_match($1,'^\{\"([^,]+)\",?(.+)?\}[\t ]*([-0-9E.]*)[\t ]*([0-9]+)?$')
+        r(a);
+    END;
+    
+COMMENT ON FUNCTION prom_from_expo_classic(text) is 'Convert exposition format with quoted/escaped metric name to prom_sample_cx type';
+
 
 CREATE FUNCTION insert_view_normalized_cx()
     RETURNS TRIGGER LANGUAGE PLPGSQL AS
