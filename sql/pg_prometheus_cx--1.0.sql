@@ -241,7 +241,7 @@ BEGIN
     EXECUTE format(
         $$
         CREATE VIEW %I AS
-        SELECT prom_construct(m.ts, l.metric_name, m.value, l.labels) AS sample,
+        SELECT prom_construct_cx(m.ts, l.metric_name, m.value, l.labels::json) AS sample,
                m.ts AS ts, l.metric_name AS metric, m.value AS value, l.labels AS labels
         FROM %I AS m
         INNER JOIN %I l ON (m.labels_id = l.id)
